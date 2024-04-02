@@ -1,18 +1,85 @@
 name: Build Image using Containerfile
 on: [push]
 
+env:
+  IMAGE_NAME: ptr-test
+  IMAGE_TAGS: v1 ${{ github.sha }}
+  REGISTRY_USER: ${{ github.actor }}
+  REGISTRY_PASSWORD: ${{ github.token }}
+  IMAGE_REGISTRY: ghcr.io/${{ github.repository_owner }}
+  
+
 jobs:
+  login:
+      name: Log in to GitHub Container Registry
+      runs-on: ubuntu-20.04
+      steps:
+        - name: Log in to ghcr.io
+          uses: redhat-actions/podman-login@v1
+          with:
+            username: ${{ env.REGISTRY_USER }}
+            password: ${{ env.REGISTRY_PASSWORD }}
+            registry: ${{ env.IMAGE_REGISTRY }}
   build:
     name: Build image
     runs-on: ubuntu-latest
-
+    permissions: 
+      contents: read
+      packages: write
     steps:
     - uses: actions/checkout@v4
-
+  
     - name: Buildah Action
       uses: redhat-actions/buildah-build@v2
       with:
         image: my-new-image
         tags: v1 ${{ github.sha }}
         containerfiles: example.containerfile
-  
+  push-ghcr:
+    name: Build and push image
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        install_latest: [ true, false ]
+
+    steps:
+      # Checkout push-to-registry action github repository
+      - name: Checkout Push to Registry action
+        uses: actions/checkout@v4
+
+      - name: Install latest podman
+        if: matrix.install_latest
+        run: |
+          bash .github/install_latest_podman.sh
+
+      # Build image using Buildah action
+      - name: Build Image
+        id: build_image
+        uses: redhat-actions/buildah-build@v2
+        with:
+          image: ${{ env.IMAGE_NAME }}
+          tags: ${{ env.IMAGE_TAGS }}
+          base-image: busybox:latest
+          entrypoint: |
+            bash
+            -c
+            echo 'hello world'
+          oci: true
+
+      # Push the image to GHCR (Image Registry)
+      - name: Push To GHCR
+        uses: redhat-actions/push-to-registry@v2
+        id: push
+        with:
+          image: ${{ steps.build_image.outputs.image }}
+          tags: ${{ steps.build_image.outputs.tags }}
+          registry: ${{ env.IMAGE_REGISTRY }}
+          username: ${{ env.REGISTRY_USER }}
+          password: ${{ env.REGISTRY_PASSWORD }}
+          extra-args: |
+            --disable-content-trust
+
+      - name: Echo outputs
+        run: |
+          echo "${{ toJSON(steps.push.outputs) }}"
