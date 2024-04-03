@@ -12,12 +12,16 @@ jobs:
       name: Log in to GitHub Container Registry
       runs-on: ubuntu-20.04
       steps:
+        - name: lowercase registry
+          run: |
+            echo "IMAGE_REGISTRY_LC=${IMAGE_REGISTRY,,}" >>${GITHUB_ENV}
+        
         - name: Log in to ghcr.io
           uses: redhat-actions/podman-login@v1
           with:
             username: ${{ env.REGISTRY_USER }}
             password: ${{ env.REGISTRY_PASSWORD }}
-            registry: ${{ env.IMAGE_REGISTRY }}
+            registry: ${{ env.IMAGE_REGISTRY_LC }}
   
         - uses: actions/checkout@v4
   
@@ -27,8 +31,7 @@ jobs:
             image: my-new-image
             tags: v1 ${{ github.sha }}
             containerfiles: example.containerfile
-     
-      
+
           # Checkout push-to-registry action github repository
         - name: Checkout Push to Registry action
           uses: actions/checkout@v4
@@ -59,7 +62,7 @@ jobs:
           with:
               image: ${{ steps.build_image.outputs.image }}
               tags: ${{ steps.build_image.outputs.tags }}
-              registry: ${{ env.IMAGE_REGISTRY }}
+              registry: ${{ env.IMAGE_REGISTRY_LC }}
               username: ${{ env.REGISTRY_USER }}
               password: ${{ env.REGISTRY_PASSWORD }}
               extra-args: |
