@@ -29,6 +29,7 @@ jobs:
   
         - name: Buildah Action
           uses: redhat-actions/buildah-build@v2
+          id: build_image
           with:
             image: my-new-image
             tags: v1 ${{ github.sha }}
@@ -43,20 +44,7 @@ jobs:
           run: |
               bash .github/install_latest_podman.sh
     
-          # Build image using Buildah action
-        - name: Build Image
-          id: build_image
-          uses: redhat-actions/buildah-build@v2
-          with:
-            image: ${{ env.IMAGE_NAME }}
-            tags: ${{ env.IMAGE_REGISTRY_LC }}/${{ env.IMAGE_TAGS }}
-            base-image: busybox:latest
-            entrypoint: |
-                bash
-                -c
-                echo 'hello world'
-            oci: true
-    
+         
           # Push the image to GHCR (Image Registry)
         - name: Push To GHCR
           uses: redhat-actions/push-to-registry@v2
