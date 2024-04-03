@@ -64,3 +64,5 @@ jobs:
         - name: Echo outputs
           run: |
               echo "${{ toJSON(steps.push.outputs) }}"
+        - name: Run image
+          run: docker run ghcr.io/plukewang/my-new-image:acc64d5364c0cb2aed655602613fab3c70682bc5 -v ${{github.workspace}}:/workspace -w /workspace build.bash 
