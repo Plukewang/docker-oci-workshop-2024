@@ -13,6 +13,9 @@ jobs:
   login:
       name: Log in to GitHub Container Registry
       runs-on: ubuntu-20.04
+      permissions:
+        contents: read
+        packages: write
       steps:
         - name: lowercase registry
           run: |
