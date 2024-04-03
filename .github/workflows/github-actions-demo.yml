@@ -5,6 +5,8 @@ env:
   REGISTRY_USER: ${{ github.actor }}
   REGISTRY_PASSWORD: ${{ github.token }}
   IMAGE_REGISTRY: ghcr.io/${{ github.repository_owner }}
+  IMAGE_NAME: ptr-test
+  IMAGE_TAGS: v1 ${{ github.sha }}
   
 
 jobs:
